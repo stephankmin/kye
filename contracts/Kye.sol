@@ -2,18 +2,23 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 
+/**
+ * looked at WeTrust's ROSCA smart contract for reference
+ * https://github.com/WeTrustPlatform/rosca-contracts/blob/develop/contracts/ROSCA.sol
+ */
+
 contract Kye {
-    uint256 public depositAmount = 1 ether;
+    uint256 public depositAmount = 1 ether; // hardcoded for simplicity
     uint256 public totalPool;
     uint256 public startTimestamp;
     uint256 public lastDistribution;
-    uint256 public depositPeriod;
+    uint256 public depositPeriod; // in days
     uint256 public requiredNumberOfUsers;
-    bool public readyToDistribute = false;
-    bool public isActive = false;
+    bool public readyToDistribute;
+    bool public isActive;
     address public owner;
-    uint256 public winnerIndex = 0;
-    address payable[] public orderOfDeposits;
+    uint256 public winnerIndex;
+    address payable[] public orderOfDeposits; // for now, pool is distributed based on order of deposits
 
     mapping(address => User) public users;
 
@@ -43,42 +48,26 @@ contract Kye {
         _;
     }
 
-    function addUser(address payable userAddress) public onlyOwner {
-        console.log("%s has been added to the list of users", userAddress);
-        users[userAddress] = User(true, false, false);
-    }
-
-    function getDepositAmount() public view returns (uint256) {
-        return depositAmount;
-    }
-
-    function getDepositPeriod() public view returns (uint256) {
-        return depositPeriod;
-    }
-
-    function getTotalPool() public view returns (uint256) {
-        return totalPool;
-    }
-
-    function getReadyToDistribute() public view returns (bool) {
-        return readyToDistribute;
-    }
-
-    /**
-    * @dev Starts the Kye and sets the contract active, allowing users to deposit eth into the contract.
-    */
+    // Starts the ROSCA and sets the contract active, allowing users to deposit ETH into the contract.
     function startKye() public onlyOwner {
         isActive = true;
         lastDistribution = block.timestamp;
         console.log("Kye has begun. Users may now deposit ether into the contract!");
     }
 
-    /**
-    * @dev Deposits eth into the contract pool. Once all users have deposited, readyToDistribute is set to true.
-    */
+    // Allows added user to deposit into contract
+    // Owner must also be added as user if they would like to deposit into contract
+    function addUser(address payable userAddress) public onlyOwner {
+        require(isActive, "Kye has not started yet");
+        console.log("%s has been added to the list of users", userAddress);
+        users[userAddress] = User(true, false, false);
+    }
+
+    // Deposits ETH into the ROSCA pool. Sets readyToDistribute to true once all users have deposited.
     function deposit() external payable onlyUser {
         require(isActive, "Kye has not started yet");
-        require(msg.value == depositAmount, "msg.value must equal depositAmount");
+        require(!readyToDistribute, "Required number of deposits has already been reached");
+        require(msg.value == depositAmount, "Deposit must equal depositAmount");
 
         totalPool += msg.value;
         users[msg.sender].hasDeposited = true;
@@ -92,10 +81,15 @@ contract Kye {
         emit Deposit(msg.sender, msg.value);
     }
 
-    function distributePool() external onlyOwner {
+    function endKye() internal {
+        isActive = false;
+        console.log("Every user has received a distribution. The Kye is now finished.");
+    }
+
+    function distributePool() external onlyUser {
         require(isActive, "Kye has not been started yet");
         require(readyToDistribute, "Not all users have deposited.");
-        // require(block.timestamp >= lastDistribution + depositPeriod * 1 minutes, "Not enough time has passed since last distribution.");
+        require(block.timestamp >= lastDistribution + depositPeriod * 1 minutes, "Not enough time has passed since last distribution.");
         
         uint256 total = totalPool;
         totalPool = 0;
@@ -111,5 +105,9 @@ contract Kye {
         readyToDistribute = false;
 
         emit DistributePool(winner, total);
+
+        if(winnerIndex == requiredNumberOfUsers) {
+            endKye();
+        }
     }
 }
