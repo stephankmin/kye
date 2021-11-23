@@ -1,9 +1,13 @@
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 /**
- * looked at WeTrust's ROSCA smart contract for reference
+ * Smart contract for on-chain Rotating Savings and Credit Association (ROSCA).
+ * Group of n users periodically deposit x amount of ETH into contract.
+ * At the end of each "round," once all users have deposited, one user receives lump sum of all deposits (n * x ETH).
+ * Order of distributions is set to the order of deposits made during first round.
+ * Contract is set to inactive once all users have received one distribution. 
+ *
+ * Looked at WeTrust's ROSCA smart contract for reference:
  * https://github.com/WeTrustPlatform/rosca-contracts/blob/develop/contracts/ROSCA.sol
  */
 
@@ -47,11 +51,12 @@ contract Kye {
         _;
     }
 
-    // Starts the ROSCA and sets the contract active, allowing users to deposit ETH into the contract.
+    // Starts the ROSCA and sets the contract active, allowing users to deposit ETH into the contract
     function startKye() public onlyOwner {
         isActive = true;
         firstRoundInProgress = true;
-        lastDistribution = block.timestamp; // First distribution can occur only after lengthOfRound has passed since startKye is called
+        // First distribution can occur only after lengthOfRound has passed since startKye is called
+        lastDistribution = block.timestamp;
     }
 
     // Allows added user to deposit into contract
@@ -61,7 +66,7 @@ contract Kye {
         users[userAddress] = User(true, false, false);
     }
 
-    // Deposits ETH into the ROSCA pool. Sets readyToDistribute to true once all users have deposited.
+    // Deposits ETH into the ROSCA pool. Sets readyToDistribute to true once all users have deposited
     function deposit() external payable onlyUser {
         require(isActive, "Kye has not started yet");
         require(!readyToDistribute, "Required number of deposits has already been reached");
