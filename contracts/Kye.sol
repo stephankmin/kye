@@ -10,9 +10,8 @@ import "hardhat/console.sol";
 contract Kye {
     uint256 public depositAmount = 1 ether; // hardcoded for simplicity
     uint256 public totalPool;
-    uint256 public startTimestamp;
     uint256 public lastDistribution;
-    uint256 public depositPeriod; // in days
+    uint256 public depositPeriod; // time period between distributions during which users can deposit funds, in days
     uint256 public requiredNumberOfUsers;
     bool public readyToDistribute;
     bool public isActive;
@@ -28,7 +27,6 @@ contract Kye {
     constructor(uint256 _depositPeriod, uint256 _requiredNumberOfUsers) {
         depositPeriod = _depositPeriod;
         requiredNumberOfUsers = _requiredNumberOfUsers;
-        startTimestamp = block.timestamp;
         owner = msg.sender;
     }
 
@@ -51,7 +49,7 @@ contract Kye {
     // Starts the ROSCA and sets the contract active, allowing users to deposit ETH into the contract.
     function startKye() public onlyOwner {
         isActive = true;
-        lastDistribution = block.timestamp;
+        lastDistribution = block.timestamp; // First distribution can occur only after depositPeriod has passed since startKye()
         console.log("Kye has begun. Users may now deposit ether into the contract!");
     }
 
@@ -76,6 +74,7 @@ contract Kye {
 
         if(totalPool == depositAmount * requiredNumberOfUsers) {
             readyToDistribute = true;
+            lastDistribution = block.timestamp; // First distribution can occur only after depositPeriod has passed since last deposit
         }
         
         emit Deposit(msg.sender, msg.value);
@@ -87,9 +86,9 @@ contract Kye {
     }
 
     function distributePool() external onlyUser {
-        require(isActive, "Kye has not been started yet");
+        require(isActive, "Kye is not active");
         require(readyToDistribute, "Not all users have deposited.");
-        require(block.timestamp >= lastDistribution + depositPeriod * 1 minutes, "Not enough time has passed since last distribution.");
+        require(block.timestamp >= lastDistribution + depositPeriod * 1 days, "Not enough time has passed since last distribution.");
         
         uint256 total = totalPool;
         totalPool = 0;
