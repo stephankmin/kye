@@ -10,22 +10,23 @@ import "hardhat/console.sol";
 contract Kye {
     uint256 public depositAmount = 1 ether; // hardcoded for simplicity
     uint256 public totalPool;
-    uint256 public lastDistribution;
-    uint256 public depositPeriod; // time period between distributions during which users can deposit funds, in days
+    uint256 public lastDistribution; // timestamp of most recent distribution
+    uint256 public lengthOfRound; // time period between distributions during which users can deposit funds, in days
     uint256 public requiredNumberOfUsers;
     bool public readyToDistribute;
     bool public isActive;
     address public owner;
     uint256 public winnerIndex;
-    address payable[] public orderOfDeposits; // for now, pool is distributed based on order of deposits
+    address payable[] public orderOfDeposits; // for now, pool is distributed based on order of deposits made during first round
+    bool public firstRoundInProgress; // if true, order of deposits can be modified
 
     mapping(address => User) public users;
 
     event Deposit(address user, uint256 amount);
     event DistributePool(address user, uint256 amount);
 
-    constructor(uint256 _depositPeriod, uint256 _requiredNumberOfUsers) {
-        depositPeriod = _depositPeriod;
+    constructor(uint256 _lengthOfRound, uint256 _requiredNumberOfUsers) {
+        lengthOfRound = _lengthOfRound;
         requiredNumberOfUsers = _requiredNumberOfUsers;
         owner = msg.sender;
     }
@@ -49,15 +50,14 @@ contract Kye {
     // Starts the ROSCA and sets the contract active, allowing users to deposit ETH into the contract.
     function startKye() public onlyOwner {
         isActive = true;
-        lastDistribution = block.timestamp; // First distribution can occur only after depositPeriod has passed since startKye()
-        console.log("Kye has begun. Users may now deposit ether into the contract!");
+        firstRoundInProgress = true;
+        lastDistribution = block.timestamp; // First distribution can occur only after lengthOfRound has passed since startKye is called
     }
 
     // Allows added user to deposit into contract
     // Owner must also be added as user if they would like to deposit into contract
     function addUser(address payable userAddress) public onlyOwner {
         require(isActive, "Kye has not started yet");
-        console.log("%s has been added to the list of users", userAddress);
         users[userAddress] = User(true, false, false);
     }
 
@@ -69,26 +69,27 @@ contract Kye {
 
         totalPool += msg.value;
         users[msg.sender].hasDeposited = true;
-        orderOfDeposits.push(payable(msg.sender));
-        console.log("%s has deposited %d ether", msg.sender, msg.value / 1e18);
+
+        if(firstRoundInProgress) {
+            orderOfDeposits.push(payable(msg.sender));
+        }
 
         if(totalPool == depositAmount * requiredNumberOfUsers) {
             readyToDistribute = true;
-            lastDistribution = block.timestamp; // First distribution can occur only after depositPeriod has passed since last deposit
         }
         
         emit Deposit(msg.sender, msg.value);
     }
 
+    // Sets contract inactive once all users have received a distribution
     function endKye() internal {
         isActive = false;
-        console.log("Every user has received a distribution. The Kye is now finished.");
     }
 
     function distributePool() external onlyUser {
         require(isActive, "Kye is not active");
         require(readyToDistribute, "Not all users have deposited.");
-        require(block.timestamp >= lastDistribution + depositPeriod * 1 days, "Not enough time has passed since last distribution.");
+        require(block.timestamp >= lastDistribution + lengthOfRound * 1 days, "Not enough time has passed since last distribution.");
         
         uint256 total = totalPool;
         totalPool = 0;
@@ -96,12 +97,14 @@ contract Kye {
         winnerIndex += 1;
         lastDistribution = block.timestamp;
         users[winner].hasWon = true;
-        console.log("%s has received %d ether!", winner, total / 1e18);
+        readyToDistribute = false;
+
+        if(firstRoundInProgress) {
+            firstRoundInProgress = false;
+        }
 
         (bool success, ) = winner.call{value: total}("");
         require(success);
-
-        readyToDistribute = false;
 
         emit DistributePool(winner, total);
 
