@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 /**
  * Smart contract for on-chain Rotating Savings and Credit Association (ROSCA).
- * Group of n users periodically deposit x amount of ETH into contract.
+ * Each user in group of n users periodically deposits x amount of ETH into contract.
  * At the end of each "round," once all users have deposited, one user receives lump sum of all deposits (n * x ETH).
  * Order of distributions is set to the order of deposits made during first round.
  * Contract is set to inactive once all users have received one distribution. 
