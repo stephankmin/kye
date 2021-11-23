@@ -1,6 +1,5 @@
 const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
-const { waffle } = require("hardhat");
 const { ethers } = require("hardhat");
 
 
@@ -25,8 +24,8 @@ describe("Kye", () => {
       expect(await kye.depositAmount()).to.equal(ethers.utils.parseEther("1.0"));
     });
   
-    it("should return depositPeriod passed into constructor", async function () {
-      expect(await kye.depositPeriod()).to.equal(7);
+    it("should return lengthOfRound passed into constructor", async function () {
+      expect(await kye.lengthOfRound()).to.equal(7);
     });
 
     describe("startKye()", () => {
@@ -59,21 +58,22 @@ describe("Kye", () => {
           .to.emit(kye, 'Deposit')
           .withArgs(user1.address, depositAmount);
       });
+
+      it("should make deposits for the remaining users", async function () {
+        for(const a of accounts.slice(2,11)) {
+          await (await kye.addUser(a.address)).wait();
+          await kye.connect(a).deposit({ value: depositAmount });
+        }
+
+        expect(await kye.readyToDistribute()).to.equal(true);
+      });
     });
 
     describe("distributePool()", () => {
       it("should distribute pool once all users have deposited", async function () {    
-        for(const a of accounts.slice(2,11)) {
-          await (await kye.addUser(a.address)).wait();
-          const deposit = await kye.connect(a).deposit({ value: depositAmount });
-          const userStruct = await kye.users(a.address);
-          expect(userStruct['hasDeposited']).to.equal(true);
-          expect(deposit)
-            .to.emit(kye, 'Deposit')
-            .withArgs(a.address, depositAmount);
-        }
-    
-        expect(await kye.readyToDistribute()).to.equal(true);
+        await network.provider.send("evm_increaseTime", [604800]);
+        await network.provider.send("evm_mine");
+
         const distribution = await kye.connect(user1).distributePool();
         const user1Struct = await kye.users(user1.address); 
         expect(user1Struct['hasWon']).to.equal(true);
