@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
  */
 
 contract Kye {
-    uint256 public depositAmount = 1 ether; // hardcoded for simplicity
+    uint256 public depositAmount;
     uint256 public totalPool;
     uint256 public lastDistribution; // timestamp of most recent distribution
     uint256 public lengthOfRound; // time period between distributions during which users can deposit funds, in days
@@ -29,7 +29,8 @@ contract Kye {
     event Deposit(address user, uint256 amount);
     event DistributePool(address user, uint256 amount);
 
-    constructor(uint256 _lengthOfRound, uint256 _requiredNumberOfUsers) {
+    constructor(uint256 _depositAmount, uint256 _lengthOfRound, uint256 _requiredNumberOfUsers) {
+        depositAmount = _depositAmount;
         lengthOfRound = _lengthOfRound;
         requiredNumberOfUsers = _requiredNumberOfUsers;
         owner = msg.sender;
