@@ -8,14 +8,15 @@ describe("Kye", () => {
   let deployer;
   let accounts;
   let user1;
-  const depositAmount = ethers.utils.parseEther("1.0");
+  let depositAmount;
   
   before(async () => {
     accounts = await ethers.getSigners();
     deployer = accounts[0];
     user1 = accounts[1];
     kyeContract = await ethers.getContractFactory("Kye");
-    kye = await kyeContract.deploy(7,10);
+    depositAmount = ethers.utils.parseEther("1.0");
+    kye = await kyeContract.deploy(ethers.utils.parseEther("1.0"),7,10);
     await kye.deployed();
   });
 
@@ -26,6 +27,10 @@ describe("Kye", () => {
   
     it("should return lengthOfRound passed into constructor", async function () {
       expect(await kye.lengthOfRound()).to.equal(7);
+    });
+
+    it("should return requiredNumberOfUsers passed into constructor", async function () {
+      expect(await kye.requiredNumberOfUsers()).to.equal(10);
     });
 
     describe("startKye()", () => {
