@@ -46,7 +46,7 @@ describe("Kye", () => {
     });
 
     describe("when called by non-owner", () => {
-      it("should be reverted if called by non-owner", async function () {
+      it("should revert if called by non-owner", async function () {
         await expect(kye.connect(user1).startKye()).to.be.revertedWith(
           "Only the contract owner can call this function"
         );
@@ -84,7 +84,7 @@ describe("Kye", () => {
     });
 
     describe("when startKye() has not been called", () => {
-      it("should be reverted", async function () {
+      it("should revert", async function () {
         await expect(kye.addUser(user1.address)).to.be.revertedWith(
           "Kye has not started yet"
         );
@@ -97,7 +97,7 @@ describe("Kye", () => {
         await startPromise.wait();
       });
 
-      it("should be reverted if called by non-owner", async function () {
+      it("should revert if called by non-owner", async function () {
         const newUser = accounts[2];
         await expect(
           kye.connect(user1).addUser(newUser.address)
@@ -133,7 +133,7 @@ describe("Kye", () => {
     });
 
     describe("when startKye() has not been called", () => {
-      it("should be reverted if isActive is false", async function () {
+      it("should revert if isActive is false", async function () {
         await expect(kye.addUser(user1.address)).to.be.revertedWith(
           "Kye has not started yet"
         );
@@ -146,7 +146,7 @@ describe("Kye", () => {
         await startPromise.wait();
       });
 
-      it("should be reverted if called by non-user", async function () {
+      it("should revert if called by non-user", async function () {
         await kye.addUser(user1.address);
         const nonUser = accounts[2];
   
@@ -215,7 +215,7 @@ describe("Kye", () => {
     });
 
     describe("when not all users have deposited", () => {
-      it("should be reverted if not all users have deposited", async function () {
+      it("should revert if not all users have deposited", async function () {
         expect(kye.connect(user1).distributePool()).to.be.revertedWith(
           "Not all users have deposited"
         );
@@ -223,7 +223,7 @@ describe("Kye", () => {
     });
 
     describe("when all users have deposited", () => {
-      it("should be reverted if lengthOfRound has not passed since lastDistribution", async function () {
+      it("should revert if lengthOfRound has not passed since lastDistribution", async function () {
         for (const a of accounts.slice(1, 11)) {
           await kye.connect(a).deposit({ value: depositAmount });
         }
