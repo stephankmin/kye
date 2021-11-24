@@ -1,6 +1,7 @@
 {
   "name": "hardhat-project",
   "scripts": {
+    "test": "npx hardhat test",
     "test:watch": "nodemon -e \"js ts sol\" -i \"ts-types/**/*.ts\" -x npx hardhat test"
   },
   "devDependencies": {
