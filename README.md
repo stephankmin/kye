@@ -5,5 +5,7 @@ At the end of each "round," once all users have deposited, one user receives a l
 The order of distributions is set to the order of deposits made during first round.
 The contract is set to inactive once all users have received one distribution.
 
+The contract is named after the Korean word for ROSCA.
+
 Known issues:
 This is a proof of concept. As of now, there is no mechanism to require users to continue depositing into the contract in subsequent rounds after they have already received their distribution.
