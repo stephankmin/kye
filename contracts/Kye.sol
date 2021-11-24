@@ -94,8 +94,8 @@ contract Kye {
 
     function distributePool() external onlyUser {
         require(isActive, "Kye is not active");
-        require(readyToDistribute, "Not all users have deposited.");
-        require(block.timestamp >= lastDistribution + lengthOfRound * 1 days, "Not enough time has passed since last distribution.");
+        require(readyToDistribute, "Not all users have deposited");
+        require(block.timestamp >= lastDistribution + lengthOfRound * 1 days, "Not enough time has passed since last distribution");
         
         uint256 total = totalPool;
         totalPool = 0;
